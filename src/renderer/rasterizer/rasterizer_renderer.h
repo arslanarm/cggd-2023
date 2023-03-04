@@ -16,6 +16,7 @@ namespace cg::renderer
 
 	protected:
 		std::shared_ptr<cg::resource<cg::unsigned_color>> render_target;
+		std::shared_ptr<cg::resource<cg::unsigned_color>> final_render_target;
 		std::shared_ptr<cg::resource<float>> depth_buffer;
 
 		std::shared_ptr<cg::renderer::rasterizer<cg::vertex, cg::unsigned_color>> rasterizer;

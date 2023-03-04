@@ -10,11 +10,13 @@ void cg::renderer::rasterization_renderer::init()
 	render_target = std::make_shared<cg::resource<unsigned_color>>(
 	settings->width, settings->height
 	);
+	final_render_target = std::make_shared<cg::resource<unsigned_color>>(
+			settings->width, settings->height
+	);
 	depth_buffer = std::make_shared<cg::resource<float>>(
 			settings->width, settings->height
 	);
-	rasterizer->set_render_target(render_target, depth_buffer);
-
+	rasterizer->set_render_target(render_target, depth_buffer, final_render_target);
 	model = std::make_shared<cg::world::model>();
 	model->load_obj(settings->model_path);
 	camera = std::make_shared<cg::world::camera>();
@@ -60,18 +62,40 @@ void cg::renderer::rasterization_renderer::render()
 		};
 	};
 
+	// Blur
+	rasterizer->compute_shader = [](const std::shared_ptr<resource<cg::unsigned_color>>& texture, const size_t i) {
+		auto x = i % texture->get_stride(), y = i / texture->get_stride();
+		float3 color;
+		for (int j = -1; j <= 1; j++) {
+			for (int k = -1; k <= 1; k++) {
+				float3 value;
+				if (x + j < 0 || x + j >= texture->get_stride() ||
+					y + k < 0 || y + k >= texture->get_number_of_elements() / texture->get_stride())
+					value = float3 { 0, 0, 0 };
+				else
+					value = texture->item(x + j, y + k).to_float3();
+				float multiplier = pow(1.f/2, 2 + (float)(abs(j) + abs(k)));
+
+				value *= multiplier;
+				color += value;
+			}
+		}
+		return unsigned_color::from_float3(color);
+	};
+
 	start = std::chrono::high_resolution_clock::now();
 	for (size_t shape_id = 0; shape_id < model->get_index_buffers().size(); shape_id++) {
 		rasterizer->set_vertex_buffer(model->get_vertex_buffers()[shape_id]);
 		rasterizer->set_index_buffer(model->get_index_buffers()[shape_id]);
 		rasterizer->draw(model->get_index_buffers()[shape_id]->get_number_of_elements(), 0);
 	}
+	rasterizer->final_draw();
 	stop = std::chrono::high_resolution_clock::now();
 
 	duration = stop - start;
 	std::cout << "Render took " << duration.count() << "ms\r\n";
 
-	cg::utils::save_resource(*render_target, settings->result_path);
+	cg::utils::save_resource(*final_render_target, settings->result_path);
 }
 
 void cg::renderer::rasterization_renderer::destroy() {}

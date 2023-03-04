@@ -20,7 +20,8 @@ namespace cg::renderer
 		~rasterizer(){};
 		void set_render_target(
 				std::shared_ptr<resource<RT>> in_render_target,
-				std::shared_ptr<resource<float>> in_depth_buffer = nullptr);
+				std::shared_ptr<resource<float>> in_depth_buffer = nullptr,
+				std::shared_ptr<resource<RT>> in_final_render_target = nullptr);
 		void clear_render_target(
 				const RT& in_clear_value, const float in_depth = FLT_MAX);
 
@@ -30,14 +31,17 @@ namespace cg::renderer
 		void set_viewport(size_t in_width, size_t in_height);
 
 		void draw(size_t num_vertexes, size_t vertex_offest);
+		void final_draw();
 
 		std::function<std::pair<float4, VB>(float4 vertex, VB vertex_data)> vertex_shader;
 		std::function<cg::color(const VB& vertex_data, const float z)> pixel_shader;
+		std::function<RT(const std::shared_ptr<resource<RT>>& texture, const size_t i)> compute_shader;
 
 	protected:
 		std::shared_ptr<cg::resource<VB>> vertex_buffer;
 		std::shared_ptr<cg::resource<unsigned int>> index_buffer;
 		std::shared_ptr<cg::resource<RT>> render_target;
+		std::shared_ptr<cg::resource<RT>> final_render_target;
 		std::shared_ptr<cg::resource<float>> depth_buffer;
 
 		size_t width = 1920;
@@ -50,7 +54,8 @@ namespace cg::renderer
 	template<typename VB, typename RT>
 	inline void rasterizer<VB, RT>::set_render_target(
 			std::shared_ptr<resource<RT>> in_render_target,
-			std::shared_ptr<resource<float>> in_depth_buffer)
+			std::shared_ptr<resource<float>> in_depth_buffer,
+			std::shared_ptr<resource<RT>> in_final_render_target)
 	{
 		if (in_render_target)
 			render_target = in_render_target;
@@ -58,6 +63,8 @@ namespace cg::renderer
 		if (in_depth_buffer)
 			depth_buffer = in_depth_buffer;
 
+		if (in_final_render_target)
+			final_render_target = in_final_render_target;
 	}
 
 	template<typename VB, typename RT>
@@ -96,7 +103,12 @@ namespace cg::renderer
 	{
 		index_buffer = in_index_buffer;
 	}
-
+	template<typename VB, typename RT>
+	inline void rasterizer<VB, RT>::final_draw() {
+		for (size_t i = 0; i < render_target->get_number_of_elements(); i++) {
+			final_render_target->item(i) = compute_shader(render_target, i);
+		}
+	}
 	template<typename VB, typename RT>
 	inline void rasterizer<VB, RT>::draw(size_t num_vertexes, size_t vertex_offset)
 	{
