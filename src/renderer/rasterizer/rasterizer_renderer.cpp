@@ -1,4 +1,5 @@
 #include "rasterizer_renderer.h"
+#define M_PI           3.14159265358979323846  /* pi */
 
 #include "utils/resource_utils.h"
 
@@ -61,20 +62,20 @@ void cg::renderer::rasterization_renderer::render()
 				vertex_data.ambient_b
 		};
 	};
-
+	int std = 5;
 	// Blur
-	rasterizer->compute_shader = [](const std::shared_ptr<resource<cg::unsigned_color>>& texture, const size_t i) {
+	rasterizer->compute_shader = [&](const std::shared_ptr<resource<cg::unsigned_color>>& texture, const size_t i) {
 		auto x = i % texture->get_stride(), y = i / texture->get_stride();
 		float3 color;
-		for (int j = -1; j <= 1; j++) {
-			for (int k = -1; k <= 1; k++) {
+		for (int j = -3/2*std; j <= 3/2*std; j++) {
+			for (int k = -3/2*std; k <= 3/2*std; k++) {
 				float3 value;
 				if (x + j < 0 || x + j >= texture->get_stride() ||
 					y + k < 0 || y + k >= texture->get_number_of_elements() / texture->get_stride())
 					value = float3 { 0, 0, 0 };
 				else
 					value = texture->item(x + j, y + k).to_float3();
-				float multiplier = pow(1.f/2, 2 + (float)(abs(j) + abs(k)));
+				float multiplier = exp(-(double)(j*j + k*k)/(double)(2 * std * std)) / (2 * M_PI * std * std);
 
 				value *= multiplier;
 				color += value;
