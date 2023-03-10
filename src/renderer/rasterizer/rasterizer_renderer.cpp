@@ -62,11 +62,14 @@ void cg::renderer::rasterization_renderer::render()
 				vertex_data.ambient_b
 		};
 	};
-	int std = 5;
+	int std = 0;
 	// Blur
 	rasterizer->compute_shader = [&](const std::shared_ptr<resource<cg::unsigned_color>>& texture, const size_t i) {
 		auto x = i % texture->get_stride(), y = i / texture->get_stride();
 		float3 color;
+		if (std == 0) {
+			return texture->item(x, y);
+		}
 		for (int j = -3/2*std; j <= 3/2*std; j++) {
 			for (int k = -3/2*std; k <= 3/2*std; k++) {
 				float3 value;
