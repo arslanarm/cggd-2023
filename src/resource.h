@@ -102,17 +102,17 @@ namespace cg
 		static unsigned_color from_color(const color& color)
 		{
 			return unsigned_color{
-					std::clamp(static_cast<uint8_t>(color.r * 255), (uint8_t)0, (uint8_t)255),
-					std::clamp(static_cast<uint8_t>(color.g * 255), (uint8_t)0, (uint8_t)255),
-					std::clamp(static_cast<uint8_t>(color.b * 255), (uint8_t)0, (uint8_t)255)
+					(uint8_t)std::clamp((color.r * 255), 0.f, 255.f),
+					(uint8_t)std::clamp((color.g * 255), 0.f, 255.f),
+					(uint8_t)std::clamp((color.b * 255), 0.f, 255.f)
 			};
 		};
 		static unsigned_color from_float3(const float3& color)
 		{
 			return unsigned_color{
-					std::clamp(static_cast<uint8_t>(color.x * 255), (uint8_t)0, (uint8_t)255),
-					std::clamp(static_cast<uint8_t>(color.y * 255), (uint8_t)0, (uint8_t)255),
-					std::clamp(static_cast<uint8_t>(color.z * 255), (uint8_t)0, (uint8_t)255),
+					(uint8_t)std::clamp((color.x * 255), 0.f, 255.f),
+					(uint8_t)std::clamp((color.y * 255), 0.f, 255.f),
+					(uint8_t)std::clamp((color.z * 255), 0.f, 255.f)
 			};
 		};
 		float3 to_float3() const
